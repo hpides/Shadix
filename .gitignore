@@ -1,0 +1,8 @@
+.mplcache
+__pycache__/
+.pytest_cache/
+# harness build trees (CMake output, fetched dependencies) and ssh control sockets
+build/
+sockets/
+# local editor/tool session config
+.claude/
