@@ -327,13 +327,15 @@ def main():
         )
         legend.set_in_layout(False)
     else:
-        fig.legend(
+        legend = fig.legend(
             handles=handles,
             title="Message\nsize",
             loc="outside right center",
             handlelength=1.5,
             borderaxespad=0.3,
         )
+    # The two-line title is left-aligned within itself by default.
+    legend.get_title().set_multialignment("center")
 
     if args.output:
         svg_path = args.output.with_suffix(".svg")
