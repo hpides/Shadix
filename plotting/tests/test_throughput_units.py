@@ -117,3 +117,18 @@ def test_find_files_for_size_keeps_list_and_list_async_apart(tmp_path):
     assert [f.name for f in pipelined_files] == [
         pipelined.replace("{size}", "8").replace("{id}", str(i)) for i in (0, 1)
     ]
+
+
+@pytest.mark.parametrize(
+    ("values", "expected"),
+    [
+        ([0.0, 6.0, 12.0, 18.0, 24.0], 0),
+        ([0.0, 0.3, 0.6, 0.9, 1.2], 1),
+        ([0.0, 0.04, 0.08, 0.12, 0.16], 2),
+        ([0.0, 0.025, 0.05, 0.075, 0.1], 3),
+        # A column mixing integer and 0.025-step ticks needs 3 decimals.
+        ([0.0, 2.0, 4.0, 0.025, 0.05], 3),
+    ],
+)
+def test_needed_decimals(values, expected):
+    assert ptc.needed_decimals(values) == expected

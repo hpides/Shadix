@@ -14,6 +14,7 @@ from pathlib import Path
 import polars as pl
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 
 # plot_layout.py lives next to this script; make the import independent of
 # how the script is invoked (by path from any cwd, or as a module).
@@ -188,6 +189,42 @@ def collect_throughputs(
     return out
 
 
+def needed_decimals(values, max_decimals: int = 6) -> int:
+    """Fewest decimals that render every value exactly (0.025 -> 3, 6 -> 0)."""
+    for d in range(max_decimals + 1):
+        if all(abs(v - round(v, d)) < 1e-9 for v in values):
+            return d
+    return max_decimals
+
+
+def unify_ytick_decimals(fig, row_axes) -> None:
+    """Give every panel of a figure column the same y tick-label precision.
+
+    The most precise panel dictates the column's decimal count (a 0.025
+    step forces x.xxx on the whole column); spanning rows form their own
+    column. Ticks must be final: the draw pass resolves the autoscaled
+    y limits the tick locations depend on.
+    """
+    fig.draw_without_rendering()
+    columns = [
+        [row[0] for row in row_axes if len(row) == 2],
+        [row[1] for row in row_axes if len(row) == 2],
+        [row[0] for row in row_axes if len(row) == 1],
+    ]
+    for column in columns:
+        ticks = [
+            t
+            for ax in column
+            for t in ax.get_yticks()
+            if ax.get_ylim()[0] <= t <= ax.get_ylim()[1]
+        ]
+        if not ticks:
+            continue
+        formatter = FormatStrFormatter(f"%.{needed_decimals(ticks)}f")
+        for ax in column:
+            ax.yaxis.set_major_formatter(formatter)
+
+
 def main():
     args = parse_args()
     sizes = sorted(args.sizes)
@@ -239,6 +276,7 @@ def main():
         # therefore sit between the two panels).
 
     hide_inner_xticklabels(row_axes)
+    unify_ytick_decimals(fig, row_axes)
     fig.supylabel("Throughput (M msgs/s)")
     # The bottom row carries the size labels. In the two-column layout a
     # spanning (full-width) row carries its own as well: its bars do not
